@@ -1,0 +1,26 @@
+# depslib dependency file v1.0
+1378658395 source:/home/gin/Code/GMHjit/main.cpp
+	<iostream>
+	<stdio.h>
+	<fstream>
+	"parser.h"
+	"type.h"
+
+1378658380 /home/gin/Code/GMHjit/parser.h
+	"type.h"
+	"exceptions.h"
+	<vector>
+	<string>
+
+1378658291 /home/gin/Code/GMHjit/type.h
+	<vector>
+
+1378577230 source:/home/gin/Code/GMHjit/parser.cpp
+	"type.h"
+	"parser.h"
+	<iostream>
+	<string>
+
+1378658264 /home/gin/Code/GMHjit/exceptions.h
+	<exception>
+

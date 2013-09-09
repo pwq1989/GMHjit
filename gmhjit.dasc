@@ -1,0 +1,58 @@
+#ifndef GMHJIT_DASM_INCLUDED
+#define GMHJIT_DASM_INCLUDED
+
+|.arch x64
+|.actionlist gmh_acntionlist
+|.section jitcode
+|
+|// Use rbx as our cell pointer.
+|// Since rbx is a callee-save register, it will be preserved
+|// across our calls to getchar and putchar.
+|.define PTR, rbx
+|
+|// Macro for calling a function.
+|// In cases where our target is <=2**32 away we can use
+|//   | call &addr
+|// But since we don't know if it will be, we use this safe
+|// sequence instead.
+|.macro callp, addr
+|  mov64  rax, (uintptr_t)addr
+|  call   rax
+|.endmacro
+
+
+#define MAX_NESTING 4092
+
+int gmhjit(gmh_State *state, Instruction *opcode, size_t size) {
+
+    int step;
+
+    unsigned int maxpc = 0;
+    int gmhstack[MAX_NESTING];
+    int *stacktop = gmhstack, *stacklimit = gmhstack + MAX_NESTING;
+
+    assert(sizeof(Instruction) == 4);
+
+    for(step = 0; step < size; step++, opcode++) {
+        switch(*opcode) {
+        // opcode t_C
+        case PUSH: {
+            //|  mov  eax,  [opcode + 4]
+            |  mov  eax,  [*(opcode + 4)]
+            |  mov  [stacktop],  eax
+            |  lea  rsi,  [stacktop + 4]
+            |  mov  [stacktop],  rsi
+            //stacktop++;
+            break;
+        }
+
+
+        }
+
+    }
+    return SUC_RETURN;
+}
+
+
+
+#endif // GMHJIT_DASM_INCLUDED
