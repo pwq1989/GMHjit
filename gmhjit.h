@@ -15,8 +15,9 @@
 
 //|.arch x64
 //|.actionlist gmh_acntionlist
-static const unsigned char gmh_acntionlist[7] = {
-  184,2,0,0,0,195,255
+static const unsigned char gmh_acntionlist[27] = {
+  248,10,83,72,139,15,255,184,237,76,141,185,233,73,129,199,239,65,137,7,255,
+  72,137,200,91,195,255
 };
 
 # 6 "gmhjit.dasc"
@@ -43,6 +44,12 @@ static const unsigned char gmh_acntionlist[7] = {
 //|  mov64  rax, (uintptr_t)addr
 //|  call   rax
 //|.endmacro
+//|
+//|.macro incptr, ptraddr, size
+//|  mov64  TMP3,  ptraddr
+//|  add    qword  TMP3,  size
+//|  mov64  ptraddr, TMP
+//|.endmacro
 
 // stack heap and label tables
 typedef struct {
@@ -52,9 +59,9 @@ typedef struct {
 
 } context_t;
 
-//|.type Cxt, context_t, rbx
+//|.type Cxt, context_t, rcx
 #define Dt1(_V) (int)(ptrdiff_t)&(((context_t *)0)_V)
-# 36 "gmhjit.dasc"
+# 42 "gmhjit.dasc"
 
 #define MAX_NESTING 4092
 
@@ -62,45 +69,50 @@ typedef struct {
 int gmhjit(dasm_State *state, Instruction *opcode, int size) {
 
     int step;
+    // struct member's offset
+    int cxtos_1 = offsetof(context_t, stacktop);
+    int cxtos_2 = offsetof(context_t, stacklimit);
 
-    unsigned int maxpc = 0;
-    //int gmhstack[MAX_NESTING];
-    //int *stacktop = gmhstack, *stacklimit = gmhstack + MAX_NESTING;
+    //unsigned int maxpc = 0;
 
+    // stack top ptr offset
+    int s_offset = 0;
     assert(sizeof(Instruction) == 4);
 
-//    |->start:
-//    |  push  PTR
-//
-//    for(step = 0; step < size; step++, opcode++) {
-//        switch(*opcode) {
-//        // opcode t_C
-//        case PUSH: {
-//            // push next instruction to stack
-//            // top pointer++
-//            |  mov  eax,    *(opcode + 1)
-//            |  mov  TMP,    Cxt->stacktop
-//            |  mov  TMP2,   [TMP]
-//            |  mov  [TMP2], eax
-//            |  mov  TMP3,   Cxt->stacktop
-//            |  add  qword   [TMP3], 4
-//            break;
-//        }
-//        default: {
-//            break;
-//        }
-//        }
-//    }
-//
-//    //return SUC_RETURN;
-//    |  mov  eax,  SUC_RETURN
-//    |  pop PTR
-//    |  ret
-
-    //|  mov  eax,  2
-    //|  ret
+    // rdi save the value of first param
+    //|->start:
+    //|  push  PTR
+    //|  mov   rcx,  [rdi]
     dasm_put(Dst, 0);
-# 80 "gmhjit.dasc"
+# 63 "gmhjit.dasc"
+
+    for(step = 0; step < 2/*size*/; step++, opcode++) {
+        switch(*opcode) {
+        // opcode t_C
+        case PUSH: {
+            // push next instruction to stack
+            //|  mov  eax,    *(opcode + 1)
+            //|  lea  TMP,    [rcx+cxtos_1]
+            //|  add  TMP,    s_offset
+            //|  mov  [TMP],  eax
+            dasm_put(Dst, 7, *(opcode + 1), cxtos_1, s_offset);
+# 73 "gmhjit.dasc"
+            // stack top pointer++
+            s_offset++;
+            break;
+        }
+        default: {
+            break;
+        }
+        }
+    }
+
+    //return SUC_RETURN;
+    //|  mov  rax,  Cxt
+    //|  pop PTR
+    //|  ret
+    dasm_put(Dst, 21);
+# 87 "gmhjit.dasc"
     return SUC_RETURN;
 }
 

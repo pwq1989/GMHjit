@@ -23,6 +23,12 @@
 |  mov64  rax, (uintptr_t)addr
 |  call   rax
 |.endmacro
+|
+|.macro incptr, ptraddr, size
+|  mov64  TMP3,  ptraddr
+|  add    qword  TMP3,  size
+|  mov64  ptraddr, TMP
+|.endmacro
 
 // stack heap and label tables
 typedef struct {
@@ -32,7 +38,7 @@ typedef struct {
 
 } context_t;
 
-|.type Cxt, context_t, rbx
+|.type Cxt, context_t, rcx
 
 #define MAX_NESTING 4092
 
@@ -40,42 +46,43 @@ typedef struct {
 int gmhjit(dasm_State *state, Instruction *opcode, int size) {
 
     int step;
+    // struct member's offset
+    int cxtos_1 = offsetof(context_t, stacktop);
+    int cxtos_2 = offsetof(context_t, stacklimit);
 
-    unsigned int maxpc = 0;
-    //int gmhstack[MAX_NESTING];
-    //int *stacktop = gmhstack, *stacklimit = gmhstack + MAX_NESTING;
+    //unsigned int maxpc = 0;
 
+    // stack top ptr offset
+    int s_offset = 0;
     assert(sizeof(Instruction) == 4);
 
-//    |->start:
-//    |  push  PTR
-//
-//    for(step = 0; step < size; step++, opcode++) {
-//        switch(*opcode) {
-//        // opcode t_C
-//        case PUSH: {
-//            // push next instruction to stack
-//            // top pointer++
-//            |  mov  eax,    *(opcode + 1)
-//            |  mov  TMP,    Cxt->stacktop
-//            |  mov  TMP2,   [TMP]
-//            |  mov  [TMP2], eax
-//            |  mov  TMP3,   Cxt->stacktop
-//            |  add  qword   [TMP3], 4
-//            break;
-//        }
-//        default: {
-//            break;
-//        }
-//        }
-//    }
-//
-//    //return SUC_RETURN;
-//    |  mov  eax,  SUC_RETURN
-//    |  pop PTR
-//    |  ret
+    // rdi save the value of first param
+    |->start:
+    |  push  PTR
+    |  mov   rcx,  [rdi]
 
-    |  mov  eax,  2
+    for(step = 0; step < 2/*size*/; step++, opcode++) {
+        switch(*opcode) {
+        // opcode t_C
+        case PUSH: {
+            // push next instruction to stack
+            |  mov  eax,    *(opcode + 1)
+            |  lea  TMP,    [rcx+cxtos_1]
+            |  add  TMP,    s_offset
+            |  mov  [TMP],  eax
+            // stack top pointer++
+            s_offset++;
+            break;
+        }
+        default: {
+            break;
+        }
+        }
+    }
+
+    //return SUC_RETURN;
+    |  mov  rax,  Cxt
+    |  pop PTR
     |  ret
     return SUC_RETURN;
 }
