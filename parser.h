@@ -7,6 +7,11 @@
 #include <vector>
 #include <string>
 
+
+#ifndef DEBUG
+#define DEBUG
+#endif
+
 class Parser {
 public:
     TokenList parserRaw2Token(const std::string&);

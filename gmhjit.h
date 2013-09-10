@@ -15,8 +15,8 @@
 
 //|.arch x64
 //|.actionlist gmh_acntionlist
-static const unsigned char gmh_acntionlist[19] = {
-  139,4,37,237,137,4,37,237,72,141,52,37,237,72,137,52,37,237,255
+static const unsigned char gmh_acntionlist[7] = {
+  184,2,0,0,0,195,255
 };
 
 # 6 "gmhjit.dasc"
@@ -30,6 +30,10 @@ static const unsigned char gmh_acntionlist[19] = {
 //|// across our calls to getchar and putchar.
 //|.define PTR, rbx
 //|
+//|.define TMP,  r15
+//|.define TMP2, r14
+//|.define TMP3, r13
+//|
 //|// Macro for calling a function.
 //|// In cases where our target is <=2**32 away we can use
 //|//   | call &addr
@@ -40,38 +44,63 @@ static const unsigned char gmh_acntionlist[19] = {
 //|  call   rax
 //|.endmacro
 
+// stack heap and label tables
+typedef struct {
+  int* stacktop;
+
+  int* stacklimit;
+
+} context_t;
+
+//|.type Cxt, context_t, rbx
+#define Dt1(_V) (int)(ptrdiff_t)&(((context_t *)0)_V)
+# 36 "gmhjit.dasc"
 
 #define MAX_NESTING 4092
 
-int gmhjit(gmh_State *state, Instruction *opcode, size_t size) {
+
+int gmhjit(dasm_State *state, Instruction *opcode, int size) {
 
     int step;
 
     unsigned int maxpc = 0;
-    int gmhstack[MAX_NESTING];
-    int *stacktop = gmhstack, *stacklimit = gmhstack + MAX_NESTING;
+    //int gmhstack[MAX_NESTING];
+    //int *stacktop = gmhstack, *stacklimit = gmhstack + MAX_NESTING;
 
     assert(sizeof(Instruction) == 4);
 
-    for(step = 0; step < size; step++, opcode++) {
-        switch(*opcode) {
-        // opcode t_C
-        case PUSH: {
-            //|  mov  eax,  [opcode + 4]
-            //|  mov  eax,  [*(opcode + 4)]
-            //|  mov  [stacktop],  eax
-            //|  lea  rsi,  [stacktop + 4]
-            //|  mov  [stacktop],  rsi
-            dasm_put(Dst, 0, *(opcode + 4), stacktop, stacktop + 4, stacktop);
-# 45 "gmhjit.dasc"
-            //stacktop++;
-            break;
-        }
+//    |->start:
+//    |  push  PTR
+//
+//    for(step = 0; step < size; step++, opcode++) {
+//        switch(*opcode) {
+//        // opcode t_C
+//        case PUSH: {
+//            // push next instruction to stack
+//            // top pointer++
+//            |  mov  eax,    *(opcode + 1)
+//            |  mov  TMP,    Cxt->stacktop
+//            |  mov  TMP2,   [TMP]
+//            |  mov  [TMP2], eax
+//            |  mov  TMP3,   Cxt->stacktop
+//            |  add  qword   [TMP3], 4
+//            break;
+//        }
+//        default: {
+//            break;
+//        }
+//        }
+//    }
+//
+//    //return SUC_RETURN;
+//    |  mov  eax,  SUC_RETURN
+//    |  pop PTR
+//    |  ret
 
-
-        }
-
-    }
+    //|  mov  eax,  2
+    //|  ret
+    dasm_put(Dst, 0);
+# 80 "gmhjit.dasc"
     return SUC_RETURN;
 }
 

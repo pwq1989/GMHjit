@@ -1,9 +1,16 @@
+
+#include "parser.h"
+#include "interpreter.h"
+#include "type.h"
+#include "exceptions.h"
+
 #include <iostream>
 #include <stdio.h>
 #include <fstream>
 
-#include "parser.h"
-#include "type.h"
+#ifndef DEBUG
+#define DEBUG 1
+#endif
 
 using namespace std;
 
@@ -44,14 +51,14 @@ const string readFile(const string filename) {
 
 int main() {
 
-    char p[7] = "²ÝÄàÂí";
+    //char p[7] = "²ÝÄàÂí";
 
-    printf("%d\n",p[0]); // -78
-    printf("%d\n",p[1]); // -35
-    printf("%d\n",p[2]); // -60
-    printf("%d\n",p[3]); // -32
-    printf("%d\n",p[4]); // -62
-    printf("%d\n",p[5]); // -19
+    //printf("%d\n",p[0]); // -78
+    //printf("%d\n",p[1]); // -35
+    //printf("%d\n",p[2]); // -60
+    //printf("%d\n",p[3]); // -32
+    //printf("%d\n",p[4]); // -62
+    //printf("%d\n",p[5]); // -19
 
 
     Parser parser;
@@ -59,7 +66,17 @@ int main() {
     string fileContents = readFile("hworld.gmh");
     auto tokens = parser.parserRaw2Token(fileContents);
 
-    printTokens(tokens);
+    InstrList bytecode = parser.tokensToIntructions(tokens);
+
+    //printTokens(tokens);
+
+    Interpreter jit(bytecode);
+    int result = jit.run();
+    if(result) {
+        cout << "gmh is successed worked" << endl;
+    } else {
+        cout << "wocao! something wrong" << endl;
+    }
 
     return 0;
 }

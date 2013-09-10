@@ -17,9 +17,9 @@ autom4te.cache/
 lib/
 bin/
 obj/
-GHMjit.cbp
-GHMjit.depend
-GHMjit.layout
+GMHjit.cbp
+GMHjit.depend
+GMHjit.layout
 missing
 depcomp
 stamp-*
