@@ -5,6 +5,8 @@
 #include <sys/mman.h>
 #include <stddef.h>
 #include <assert.h>
+#include <string>
+#include <iostream>
 
 
 #define ERR_RETURN 0
@@ -99,138 +101,129 @@ void free_jitcode(void *code) {
 }
 
 void printInstrList(Instruction *opcode, size_t size) {
+    using namespace std;
+
     int step;
+    string s;
     for(step = 0; step < size; step++, opcode++) {
+        s.append("line:" + to_string(step) + " ");
         switch(*opcode) {
-        // Stack manipulations
-        case PUSH: {
-            printf("print opcode : %d  PUSH:  %x\n", step, *(opcode));
+        case PUSH:
+            s.append("PUSH ");
             break;
-        }
-        case DUP: {
-            printf("print opcode : %d  DUP:  %x\n", step, *(opcode));
+
+        case DUP:
+            s.append("DUP");
             break;
-        }
-        case COPY: {
-            printf("print opcode : %d  COPY:  %x\n", step, *(opcode));
+
+        case COPY:
+            s.append("COPY ");
+            break;
+
+        case SWAP:
+            s.append("SWAP");
+            break;
+
+        case DISCARD:
+            s.append("DISCARD");
+            break;
+
+        case SLIDE:
+            s.append("SLIDE ");
+            break;
+
+        case ADD:
+            s.append("ADD");
+            break;
+
+        case SUB:
+            s.append("SUB");
+            break;
+
+        case MUL:
+            s.append("MUL");
+            break;
+
+        case DIV:
+            s.append("DIV");
+            break;
+
+        case MOD:
+            s.append("MOD");
+            break;
+
+        case STORE:
+            s.append("STORE");
+            break;
+
+        case RETRIEVE:
+            s.append("RETRIEVE");
+            break;
+
+        case MARK:
+            s.append("MARK");
+            break;
+
+        case CALL:
+            s.append("CALL");
+            break;
+
+        case JUMP:
+            s.append("JUMP");
+            break;
+
+        case JUMPZERO:
+            s.append("JUMPZERO");
+            break;
+
+        case JUMPNEG:
+            s.append("JUMPNEG");
+            break;
+
+        case ENDSUB:
+            s.append("ENDSUB");
+            break;
+
+        case ENDPROG:
+            s.append("ENDPROG");
+            break;
+
+        case WRITEC:
+            s.append("WRITEC");
+            break;
+
+        case WRITEN:
+            s.append("WRITEN");
+            break;
+
+        case READC:
+            s.append("READC");
+            break;
+
+        case READN:
+            s.append("READN");
+            break;
+
+        default:
+            s.append("ERROR!!!!");
             break;
         }
 
-        case SWAP: {
-            printf("print opcode : %d  SWAP:  %x\n", step, *(opcode));
+        switch(*opcode) {
+        case PUSH: case COPY: case SLIDE: case MARK:
+        case CALL: case JUMP: case JUMPZERO: case JUMPNEG:
+            ++opcode;
+            ++step;
+            s.append(to_string(*opcode));
+
             break;
+        default: break;
         }
 
-        case DISCARD: {
-            printf("print opcode : %d  DISCARD:  %x\n", step, *(opcode));
-            break;
-        }
+        s.append("\n");
 
-        case SLIDE: {
-            printf("print opcode : %d  SLIDE:  %x\n", step, *(opcode));
-            break;
-        }
+        cout << s;
 
-        // Arithmetic
-        case ADD: {
-            printf("print opcode : %d  ADD:  %x\n", step, *(opcode));
-            break;
-        }
-
-        case SUB: {
-            printf("print opcode : %d  SUB:  %x\n", step, *(opcode));
-            break;
-        }
-
-        case MUL: {
-            printf("print opcode : %d  MUL:  %x\n", step, *(opcode));
-            break;
-        }
-
-        case DIV: {
-            printf("print opcode : %d  DIV:  %x\n", step, *(opcode));
-            break;
-        }
-
-        case MOD: {
-            printf("print opcode : %d  MOD:  %x\n", step, *(opcode));
-            break;
-        }
-
-        // Heap access
-        case STORE: {
-            printf("print opcode : %d  STORE:  %x\n", step, *(opcode));
-            break;
-        }
-
-        case RETRIEVE: {
-            printf("print opcode : %d  RETRIEVE:  %x\n", step, *(opcode));
-            break;
-        }
-
-        // Flow control
-        case MARK: {
-            printf("print opcode : %d  MARK:  %x\n", step, *(opcode));
-            break;
-        }
-        // Not sure what the difference is between CALL and JUMP.
-        // I think this CALL function should actually execute a function...
-        case CALL: {
-            printf("print opcode : %d  CALL:  %x\n", step, *(opcode));
-            break;
-        }
-
-        case JUMP: {
-            printf("print opcode : %d  JUMP:  %x\n", step, *(opcode));
-            break;
-        }
-
-        case JUMPZERO: {
-            printf("print opcode : %d  JUMPZERO:  %x\n", step, *(opcode));
-            break;
-        }
-
-        case JUMPNEG: {
-            printf("print opcode : %d  JUMPNEG:  %x\n", step, *(opcode));
-            break;
-        }
-
-        case ENDSUB: {
-            printf("print opcode : %d  ENDSUB:  %x\n", step, *(opcode));
-            break;
-        }
-
-        case ENDPROG: {
-            printf("print opcode : %d  ENDPROG:  %x\n", step, *(opcode));
-            break;
-            //return SUC_RETURN; // this is officially the end of the interpreter session
-        }
-
-        // I/O operations
-        case WRITEC: {
-            printf("print opcode : %d  WRITEC:  %x\n", step, *(opcode));
-            break;
-        }
-
-        case WRITEN: {
-            printf("print opcode : %d  WRITEN:  %x\n", step, *(opcode));
-            break;
-        }
-
-        case READC: {
-            printf("print opcode : %d  READC:  %x\n", step, *(opcode));
-            break;
-        }
-
-        case READN: {
-            printf("print opcode : %d  READN:  %x\n", step, *(opcode));
-            break;
-        }
-        default: {
-            printf("print opcode : %d  ERRER happend:  %x\n", step, *(opcode));
-            break;
-        }
-        }
     }
 
 }

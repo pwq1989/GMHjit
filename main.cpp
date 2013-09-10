@@ -51,19 +51,24 @@ const string readFile(const string filename) {
 
 int main() {
 
-    //char p[7] = "²İÄàÂí";
+    //char p[7] = "Â²ÃÃ„Ã Ã‚Ã­";
+    //char p[7] = "è‰æ³¥é©¬";
 
-    //printf("%d\n",p[0]); // -78
-    //printf("%d\n",p[1]); // -35
-    //printf("%d\n",p[2]); // -60
-    //printf("%d\n",p[3]); // -32
-    //printf("%d\n",p[4]); // -62
-    //printf("%d\n",p[5]); // -19
+    //printf("%d\n",p[0]); // -78 -24
+    //printf("%d\n",p[1]); // -35 -115
+    //printf("%d\n",p[2]); // -60 -119
+    //printf("%d\n",p[3]); // -32 -26
+    //printf("%d\n",p[4]); // -62 -77
+    //printf("%d\n",p[5]); // -19 -91
+
 
 
     Parser parser;
 
     string fileContents = readFile("hworld.gmh");
+
+    //cout << fileContents << endl;
+
     auto tokens = parser.parserRaw2Token(fileContents);
 
     InstrList bytecode = parser.tokensToIntructions(tokens);

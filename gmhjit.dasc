@@ -74,7 +74,127 @@ int gmhjit(dasm_State *state, Instruction *opcode, int size) {
             s_offset++;
             break;
         }
+        case DUP: {
+            printf("print opcode : %d  DUP:  %x\n", step, *(opcode));
+            break;
+        }
+        case COPY: {
+            printf("print opcode : %d  COPY:  %x\n", step, *(opcode));
+            break;
+        }
+
+        case SWAP: {
+            printf("print opcode : %d  SWAP:  %x\n", step, *(opcode));
+            break;
+        }
+
+        case DISCARD: {
+            printf("print opcode : %d  DISCARD:  %x\n", step, *(opcode));
+            break;
+        }
+
+        case SLIDE: {
+            printf("print opcode : %d  SLIDE:  %x\n", step, *(opcode));
+            break;
+        }
+
+        // Arithmetic
+        case ADD: {
+            printf("print opcode : %d  ADD:  %x\n", step, *(opcode));
+            break;
+        }
+
+        case SUB: {
+            printf("print opcode : %d  SUB:  %x\n", step, *(opcode));
+            break;
+        }
+
+        case MUL: {
+            printf("print opcode : %d  MUL:  %x\n", step, *(opcode));
+            break;
+        }
+
+        case DIV: {
+            printf("print opcode : %d  DIV:  %x\n", step, *(opcode));
+            break;
+        }
+
+        case MOD: {
+            printf("print opcode : %d  MOD:  %x\n", step, *(opcode));
+            break;
+        }
+
+        // Heap access
+        case STORE: {
+            printf("print opcode : %d  STORE:  %x\n", step, *(opcode));
+            break;
+        }
+
+        case RETRIEVE: {
+            printf("print opcode : %d  RETRIEVE:  %x\n", step, *(opcode));
+            break;
+        }
+
+        // Flow control
+        case MARK: {
+            printf("print opcode : %d  MARK:  %x\n", step, *(opcode));
+            break;
+        }
+        // Not sure what the difference is between CALL and JUMP.
+        // I think this CALL function should actually execute a function...
+        case CALL: {
+            printf("print opcode : %d  CALL:  %x\n", step, *(opcode));
+            break;
+        }
+
+        case JUMP: {
+            printf("print opcode : %d  JUMP:  %x\n", step, *(opcode));
+            break;
+        }
+
+        case JUMPZERO: {
+            printf("print opcode : %d  JUMPZERO:  %x\n", step, *(opcode));
+            break;
+        }
+
+        case JUMPNEG: {
+            printf("print opcode : %d  JUMPNEG:  %x\n", step, *(opcode));
+            break;
+        }
+
+        case ENDSUB: {
+            printf("print opcode : %d  ENDSUB:  %x\n", step, *(opcode));
+            break;
+        }
+
+        case ENDPROG: {
+            printf("print opcode : %d  ENDPROG:  %x\n", step, *(opcode));
+            break;
+            //return SUC_RETURN; // this is officially the end of the interpreter session
+        }
+
+        // I/O operations
+        case WRITEC: {
+            printf("print opcode : %d  WRITEC:  %x\n", step, *(opcode));
+            break;
+        }
+
+        case WRITEN: {
+            printf("print opcode : %d  WRITEN:  %x\n", step, *(opcode));
+            break;
+        }
+
+        case READC: {
+            printf("print opcode : %d  READC:  %x\n", step, *(opcode));
+            break;
+        }
+
+        case READN: {
+            printf("print opcode : %d  READN:  %x\n", step, *(opcode));
+            break;
+        }
         default: {
+            printf("print opcode : %d  ERRER happend:  %x\n", step, *(opcode));
             break;
         }
         }

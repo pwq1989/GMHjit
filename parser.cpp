@@ -16,27 +16,27 @@ TokenList Parser::parserRaw2Token(const string &data) {
         //register int8_t val = (int8_t)*index;
         switch((int8_t)*index) {
         // get 草
-        case -78:
+        case -24:
             index++;
-            if ((int8_t)*index == -35) {
+            if ((int8_t)*index == -115) {
                 tokens.push_back(t_C);
                 break;
             }
             index--;
             break;
         // get 泥
-        case -60:
+        case -119:
             index++;
-            if ((int8_t)*index == -32) {
+            if ((int8_t)*index == -26) {
                 tokens.push_back(t_N);
                 break;
             }
             index--;
             break;
         // get 马
-        case -62:
+        case -77:
             index++;
-            if ((int8_t)*index == -19) {
+            if ((int8_t)*index == -91) {
                 tokens.push_back(t_M);
                 break;
             }
@@ -170,6 +170,7 @@ long Parser::tokensToNumber(const TokenList &tokens, int &index) {
 
 void Parser::parseNumber(const TokenList &tokens, InstrList &p, int &k) {
     if(tokens[++k] == t_M) { // No label as argument
+        cout << k << " happened " << endl;
         throw NoLabelArgumentException();
     } else { // We're going to parse the label now
         p.push_back((Instruction)tokensToNumber(tokens, k));
