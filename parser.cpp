@@ -16,32 +16,51 @@ TokenList Parser::parserRaw2Token(const string &data) {
         //register int8_t val = (int8_t)*index;
         switch((int8_t)*index) {
         // get 草
-        case -24:
+        case -24: {
             index++;
             if ((int8_t)*index == -115) {
-                tokens.push_back(t_C);
-                break;
+                index++;
+                if ((int8_t)*index == -119) {
+                    tokens.push_back(t_C);
+                    break;
+                }
+                index--;
             }
             index--;
             break;
+        }
         // get 泥
-        case -119:
+        case -26: {
             index++;
-            if ((int8_t)*index == -26) {
-                tokens.push_back(t_N);
-                break;
+            if ((int8_t)*index == -77) {
+                index++;
+                if ((int8_t)*index == -91) {
+                    tokens.push_back(t_N);
+                    break;
+                }
+                index--;
             }
             index--;
             break;
+        }
         // get 马
-        case -77:
+        case -23: {
             index++;
-            if ((int8_t)*index == -91) {
-                tokens.push_back(t_M);
-                break;
+            if ((int8_t)*index == -87) {
+                index++;
+                if ((int8_t)*index == -84) {
+                    tokens.push_back(t_M);
+                    break;
+                }
+                index--;
             }
             index--;
             break;
+        }
+
+        default: {
+            break;
+        }
         }
     }
     return tokens;

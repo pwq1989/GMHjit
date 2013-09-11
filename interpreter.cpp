@@ -39,7 +39,7 @@ typedef int (*dasm_gmh_func)(context_t*);
 
 
 void initjit(dasm_State **state, const void *actionlist,
-             const void** glob) {
+             void** glob) {
     dasm_init(state, 1);
     dasm_setupglobal(state, glob, GLOB_MAX);
     dasm_setup(state, actionlist);
@@ -100,20 +100,24 @@ void free_jitcode(void *code) {
     assert(status == 0);
 }
 
+
+
 void printInstrList(Instruction *opcode, size_t size) {
     using namespace std;
 
     int step;
-    string s;
-    for(step = 0; step < size; step++, opcode++) {
-        s.append("line:" + to_string(step) + " ");
+    int lineno;
+    for(step = 0,lineno = 0; step < (int)size; lineno++, step++, opcode++) {
+        string s;
+        s.append("line:" + to_string(lineno) + " ");
+        //cout << *opcode << endl;
         switch(*opcode) {
         case PUSH:
             s.append("PUSH ");
             break;
 
         case DUP:
-            s.append("DUP");
+            s.append("DUP ");
             break;
 
         case COPY:
@@ -121,11 +125,11 @@ void printInstrList(Instruction *opcode, size_t size) {
             break;
 
         case SWAP:
-            s.append("SWAP");
+            s.append("SWAP ");
             break;
 
         case DISCARD:
-            s.append("DISCARD");
+            s.append("DISCARD ");
             break;
 
         case SLIDE:
@@ -133,71 +137,71 @@ void printInstrList(Instruction *opcode, size_t size) {
             break;
 
         case ADD:
-            s.append("ADD");
+            s.append("ADD ");
             break;
 
         case SUB:
-            s.append("SUB");
+            s.append("SUB ");
             break;
 
         case MUL:
-            s.append("MUL");
+            s.append("MUL ");
             break;
 
         case DIV:
-            s.append("DIV");
+            s.append("DIV ");
             break;
 
         case MOD:
-            s.append("MOD");
+            s.append("MOD ");
             break;
 
         case STORE:
-            s.append("STORE");
+            s.append("STORE ");
             break;
 
         case RETRIEVE:
-            s.append("RETRIEVE");
+            s.append("RETRIEVE ");
             break;
 
         case MARK:
-            s.append("MARK");
+            s.append("MARK ");
             break;
 
         case CALL:
-            s.append("CALL");
+            s.append("CALL ");
             break;
 
         case JUMP:
-            s.append("JUMP");
+            s.append("JUMP ");
             break;
 
         case JUMPZERO:
-            s.append("JUMPZERO");
+            s.append("JUMPZERO ");
             break;
 
         case JUMPNEG:
-            s.append("JUMPNEG");
+            s.append("JUMPNEG ");
             break;
 
         case ENDSUB:
-            s.append("ENDSUB");
+            s.append("ENDSUB ");
             break;
 
         case ENDPROG:
-            s.append("ENDPROG");
+            s.append("ENDPROG ");
             break;
 
         case WRITEC:
-            s.append("WRITEC");
+            s.append("WRITEC ");
             break;
 
         case WRITEN:
-            s.append("WRITEN");
+            s.append("WRITEN ");
             break;
 
         case READC:
-            s.append("READC");
+            s.append("READC ");
             break;
 
         case READN:
@@ -215,7 +219,6 @@ void printInstrList(Instruction *opcode, size_t size) {
             ++opcode;
             ++step;
             s.append(to_string(*opcode));
-
             break;
         default: break;
         }
@@ -228,10 +231,24 @@ void printInstrList(Instruction *opcode, size_t size) {
 
 }
 
+//void testPrint() {
+//    InstrList test;
+//    test.push_back(PUSH);
+//    test.push_back(2);
+//    test.push_back(DISCARD);
+//    test.push_back(SWAP);
+//    Instruction *opcode;
+//    opcode = (Instruction*)(&test[0]);
+//    int size = (int)test.size();
+//    printInstrList(opcode,size);
+//}
+
 int Interpreter::run() {
 
-    Instruction *opcode = (Instruction*)(&opcodeList[0]);
+    Instruction *opcode = (Instruction*)(opcodeList->data());
     int size = (int)opcodeList->size();
+
+    //testPrint();
 
 #ifndef NDEBUG
     printInstrList(opcode, size);
@@ -263,9 +280,9 @@ int Interpreter::run() {
     ret = fptr(cxt);
 
     // for debug
-    printf("ret = %x\n", ret);
-    printf("cxt = %x\n", (void*)cxt);
-    printf("cxt->stacktop = %x\n", cxt->stacktop);
+    printf("ret = %x\n", (unsigned int)ret);
+    printf("cxt = %p\n", (void*)cxt);
+    printf("cxt->stacktop = %p\n", (void*)cxt->stacktop);
     free_jitcode((void*)fptr);
 
     return ret;

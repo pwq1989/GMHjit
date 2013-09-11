@@ -73,6 +73,7 @@ int gmhjit(dasm_State *state, Instruction *opcode, int size) {
     int cxtos_1 = offsetof(context_t, stacktop);
     int cxtos_2 = offsetof(context_t, stacklimit);
 
+    (void)cxtos_2;
     //unsigned int maxpc = 0;
 
     // stack top ptr offset
@@ -84,7 +85,7 @@ int gmhjit(dasm_State *state, Instruction *opcode, int size) {
     //|  push  PTR
     //|  mov   rcx,  [rdi]
     dasm_put(Dst, 0);
-# 63 "gmhjit.dasc"
+# 64 "gmhjit.dasc"
 
     for(step = 0; step < 2/*size*/; step++, opcode++) {
         switch(*opcode) {
@@ -96,7 +97,7 @@ int gmhjit(dasm_State *state, Instruction *opcode, int size) {
             //|  add  TMP,    s_offset
             //|  mov  [TMP],  eax
             dasm_put(Dst, 7, *(opcode + 1), cxtos_1, s_offset);
-# 73 "gmhjit.dasc"
+# 74 "gmhjit.dasc"
             // stack top pointer++
             s_offset++;
             break;
@@ -232,7 +233,7 @@ int gmhjit(dasm_State *state, Instruction *opcode, int size) {
     //|  pop PTR
     //|  ret
     dasm_put(Dst, 21);
-# 207 "gmhjit.dasc"
+# 208 "gmhjit.dasc"
     return SUC_RETURN;
 }
 
