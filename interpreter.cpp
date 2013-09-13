@@ -2,6 +2,7 @@
 
 #include <malloc.h>
 #include <stdio.h>
+#include <cstring>
 #include <sys/mman.h>
 #include <stddef.h>
 #include <assert.h>
@@ -268,8 +269,7 @@ int Interpreter::run() {
     /// TODO translate to C++ style?
     // init context
     context_t *cxt = (context_t*)calloc(1, sizeof(context_t));
-    cxt->stacktop = (int*)calloc(4092, sizeof(int));
-    cxt->stacklimit = cxt->stacktop + MAX_NESTING;
+    memset(cxt, 0, sizeof(context_t));
     //...
 
     // run jit code
@@ -282,7 +282,6 @@ int Interpreter::run() {
     // for debug
     printf("ret = %x\n", (unsigned int)ret);
     printf("cxt = %p\n", (void*)cxt);
-    printf("cxt->stacktop = %p\n", (void*)cxt->stacktop);
     free_jitcode((void*)fptr);
 
     return ret;

@@ -10,9 +10,11 @@
 |// across our calls to getchar and putchar.
 |.define PTR, rbx
 |
-|.define TMP,  r15
-|.define TMP2, r14
+|
+|.define TMP,  edx
+|.define TMP2, ecx
 |.define TMP3, r13
+|.define CellSize, 4
 |
 |// Macro for calling a function.
 |// In cases where our target is <=2**32 away we can use
@@ -24,6 +26,10 @@
 |  call   rax
 |.endmacro
 |
+|.macro setStackp, value
+|  mov  dword [rsp - 4], value
+|.endmacro
+|
 |.macro incptr, ptraddr, size
 |  mov64  TMP3,  ptraddr
 |  add    qword  TMP3,  size
@@ -32,25 +38,28 @@
 
 // stack heap and label tables
 typedef struct {
-  int* stacktop;
+  int stack[4092];
 
-  int* stacklimit;
+  int heap[4092];
 
 } context_t;
 
-|.type Cxt, context_t, rcx
+|.type Cxt, context_t, r15
 
 #define MAX_NESTING 4092
+
+#define cellsize sizeof(int)
+#define sp_offsetb cxtos_1+s_offset*cellsize
 
 
 int gmhjit(dasm_State *state, Instruction *opcode, int size) {
 
     int step;
     // struct member's offset
-    int cxtos_1 = offsetof(context_t, stacktop);
-    int cxtos_2 = offsetof(context_t, stacklimit);
+    int cxtos_1 = offsetof(context_t, stack);
+    int cxtos_2 = offsetof(context_t, heap);
 
-    //unsigned int maxpc = 0;
+    unsigned int maxpc = 0;
 
     // stack top ptr offset
     int s_offset = 0;
@@ -59,79 +68,153 @@ int gmhjit(dasm_State *state, Instruction *opcode, int size) {
     // rdi save the value of first param
     |->start:
     |  push  PTR
-    |  mov   rcx,  [rdi]
+    |  push  rbp
+    |  mov   rbp,  rsp
+#ifndef NDEBUG
+    // save the stack top ptr in program stack
+    |  setStackp s_offset
+#endif
+    |  mov   PTR,  rdi
 
-    for(step = 0; step < 2/*size*/; step++, opcode++) {
+    for(step = 0; step < size; step++, opcode++) {
         switch(*opcode) {
         // opcode t_C
         case PUSH: {
             // push next instruction to stack
-            |  mov  eax,    *(opcode + 1)
-            |  lea  TMP,    [rcx+cxtos_1]
-            |  add  TMP,    s_offset
-            |  mov  [TMP],  eax
+            |  mov  dword [PTR+sp_offsetb], *(opcode + 1)
             // stack top pointer++
             s_offset++;
+#ifndef NDEBUG
+            |  setStackp s_offset
+#endif
+            step++;
+            opcode++;
             break;
         }
         case DUP: {
-            printf("print opcode : %d  DUP:  %x\n", step, *(opcode));
+            // duplicate the top item on the stack
+            |  mov TMP, [PTR+sp_offsetb]
+            s_offset++;
+            |  mov [PTR+sp_offsetb], TMP
+#ifndef NDEBUG
+            |  setStackp s_offset
+#endif
             break;
         }
         case COPY: {
-            printf("print opcode : %d  COPY:  %x\n", step, *(opcode));
+            // Copy the nth item on the stack (given by the argument)
+            // onto the top of the stack
+            |  mov TMP, [PTR+cxtos_1+(*(opcode + 1))*cellsize]
+            s_offset++;
+            |  mov [PTR+sp_offsetb], TMP
+#ifndef NDEBUG
+            |  setStackp s_offset
+#endif
             break;
         }
 
         case SWAP: {
-            printf("print opcode : %d  SWAP:  %x\n", step, *(opcode));
+            // Swap the top two items on the stack
+            |  mov TMP,  [PTR+sp_offsetb]
+            |  mov TMP2, [PTR+sp_offsetb-cellsize]
+            |  mov [PTR+sp_offsetb-cellsize],  TMP
+            |  mov [PTR+sp_offsetb],  TMP2
             break;
         }
 
         case DISCARD: {
-            printf("print opcode : %d  DISCARD:  %x\n", step, *(opcode));
+            // Discard the top item on the stack
+            s_offset--;
+#ifndef NDEBUG
+            |  setStackp s_offset
+#endif
             break;
         }
 
         case SLIDE: {
-            printf("print opcode : %d  SLIDE:  %x\n", step, *(opcode));
+            // Slide n items off the stack, keeping the top item
+            |  mov TMP,  [PTR+sp_offsetb]
+            s_offset = s_offset - *(opcode + 1) + 1;
+            |  mov [PTR+sp_offsetb], TMP
+#ifndef NDEBUG
+            |  setStackp s_offset
+#endif
+            step++;
+            opcode++;
             break;
         }
 
         // Arithmetic
         case ADD: {
-            printf("print opcode : %d  ADD:  %x\n", step, *(opcode));
+            // Add pop the first and second element from stack,
+            // add them and push the result back
+            |  mov TMP,  [PTR+sp_offsetb]
+            s_offset--;
+            |  add TMP,  [PTR+sp_offsetb]
+            |  mov [PTR+sp_offsetb], TMP
+#ifndef NDEBUG
+            |  setStackp s_offset
+#endif
             break;
         }
 
         case SUB: {
-            printf("print opcode : %d  SUB:  %x\n", step, *(opcode));
+            // Subtraction, pop the first and second element from stack, (second - first)
+            // sub them and push the result back
+            |  mov TMP,  [PTR+sp_offsetb]
+            s_offset--;
+            |  sub TMP,  [PTR+sp_offsetb]
+            |  mov [PTR+sp_offsetb], TMP
+#ifndef NDEBUG
+            |  setStackp s_offset
+#endif
             break;
         }
 
         case MUL: {
-            printf("print opcode : %d  MUL:  %x\n", step, *(opcode));
+            // Multiplication. pop the first and second element from stack, (second*first)
+            // mul them and push the result back
+            /// TODO
+
             break;
         }
 
         case DIV: {
-            printf("print opcode : %d  DIV:  %x\n", step, *(opcode));
+            // Division. pop the first and second element from stack, (second/first)
+            // div them and push the result back
+            /// TODO
             break;
         }
 
         case MOD: {
-            printf("print opcode : %d  MOD:  %x\n", step, *(opcode));
+            // Modulo. pop the first and second element from stack, (second mod first)
+            // mod them and push the result back
+            /// TODO
+
             break;
         }
 
         // Heap access
         case STORE: {
-            printf("print opcode : %d  STORE:  %x\n", step, *(opcode));
+            // Store
+            |  mov TMP,  [PTR+sp_offsetb]   // value
+            |  mov TMP2, [PTR+sp_offsetb-cellsize]  // address
+            s_offset -= 2;
+
+            |  lea TMP3, [PTR+TMP2*CellSize+cxtos_2]
+            |  mov [TMP3], TMP
+#ifndef NDEBUG
+            |  setStackp s_offset
+#endif
             break;
         }
 
         case RETRIEVE: {
-            printf("print opcode : %d  RETRIEVE:  %x\n", step, *(opcode));
+            // Retrieve
+            |  mov TMP,  [PTR+sp_offsetb]   // address
+            |  lea TMP3, [PTR+TMP*CellSize+cxtos_2]
+            |  mov TMP,  [TMP3]
+            |  mov [PTR+sp_offsetb], TMP
             break;
         }
 
@@ -201,8 +284,9 @@ int gmhjit(dasm_State *state, Instruction *opcode, int size) {
     }
 
     //return SUC_RETURN;
-    |  mov  rax,  Cxt
-    |  pop PTR
+    |  mov  rax,  [rsp - 4]
+    |  pop  rbp
+    |  pop  PTR
     |  ret
     return SUC_RETURN;
 }
