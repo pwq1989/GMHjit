@@ -15,13 +15,16 @@
 
 //|.arch x64
 //|.actionlist gmh_acntionlist
-static const unsigned char gmh_acntionlist[105] = {
+static const unsigned char gmh_acntionlist[162] = {
   248,10,83,85,72,137,229,255,199,132,253,36,233,237,255,72,137,252,251,255,
-  199,131,233,237,255,139,147,233,255,137,147,233,255,139,147,233,139,139,233,
-  137,147,233,137,139,233,255,3,147,233,137,147,233,255,43,147,233,137,147,
-  233,255,139,147,233,139,139,233,255,76,141,172,253,139,233,65,137,85,0,255,
-  139,147,233,76,141,172,253,147,233,65,139,85,0,137,147,233,255,72,139,132,
-  253,36,233,93,91,195,255
+  199,131,233,237,255,199,131,233,65,0,0,0,15,182,187,233,72,184,237,237,252,
+  255,208,255,139,147,233,255,137,147,233,255,139,147,233,139,139,233,137,147,
+  233,137,139,233,255,3,147,233,137,147,233,255,43,147,233,137,147,233,255,
+  139,147,233,139,139,233,255,76,141,172,253,139,233,65,137,85,0,255,139,147,
+  233,76,141,172,253,147,233,65,139,85,0,137,147,233,255,249,255,252,233,245,
+  255,131,187,233,0,15,132,245,255,131,187,233,0,15,140,245,255,139,147,233,
+  76,141,172,253,147,233,72,184,237,237,252,255,208,65,136,69,0,255,249,93,
+  91,195,255
 };
 
 # 6 "gmhjit.dasc"
@@ -78,6 +81,9 @@ typedef struct {
 #define cellsize sizeof(int)
 #define sp_offsetb cxtos_1+s_offset*cellsize
 
+#define ReservedLabel 3
+// 2 is end of program
+#define EndProLabel 2
 
 int gmhjit(dasm_State *state, Instruction *opcode, int size) {
 
@@ -86,7 +92,13 @@ int gmhjit(dasm_State *state, Instruction *opcode, int size) {
     int cxtos_1 = offsetof(context_t, stack);
     int cxtos_2 = offsetof(context_t, heap);
 
+    // init pclabel
+    dasm_growpc(&state, 2);
+
     unsigned int maxpc = 0;
+
+    int pcstack[MAX_NESTING];
+    int *top = pcstack, *limit = pcstack + MAX_NESTING;
 
     // stack top ptr offset
     int s_offset = 0;
@@ -98,31 +110,41 @@ int gmhjit(dasm_State *state, Instruction *opcode, int size) {
     //|  push  rbp
     //|  mov   rbp,  rsp
     dasm_put(Dst, 0);
-# 73 "gmhjit.dasc"
+# 82 "gmhjit.dasc"
 #ifndef NDEBUG
     // save the stack top ptr in program stack
     //|  setStackp s_offset
     dasm_put(Dst, 8, - 4, s_offset);
-# 76 "gmhjit.dasc"
+# 85 "gmhjit.dasc"
 #endif
     //|  mov   PTR,  rdi
     dasm_put(Dst, 15);
-# 78 "gmhjit.dasc"
+# 87 "gmhjit.dasc"
 
-    for(step = 0; step < size; step++, opcode++) {
+    for(step = 0; step < 2; step++, opcode++) {
         switch(*opcode) {
         // opcode t_C
         case PUSH: {
             // push next instruction to stack
             //|  mov  dword [PTR+sp_offsetb], *(opcode + 1)
             dasm_put(Dst, 20, sp_offsetb, *(opcode + 1));
-# 85 "gmhjit.dasc"
+# 94 "gmhjit.dasc"
+            //|  callp getchar
+            //|  mov byte [PTR+sp_offsetb], al
+            //|  mov  dword [PTR+sp_offsetb], 65
+            //|  movzx edi, byte [PTR+sp_offsetb]
+            //|  callp putchar
+            dasm_put(Dst, 25, sp_offsetb, sp_offsetb, (unsigned int)((uintptr_t)putchar), (unsigned int)(((uintptr_t)putchar)>>32));
+# 99 "gmhjit.dasc"
+//            |  cmp  dword [PTR+sp_offsetb], 1
+//            |  je  =>EndProLabel
+//            |  mov  rax,  2
             // stack top pointer++
             s_offset++;
 #ifndef NDEBUG
             //|  setStackp s_offset
             dasm_put(Dst, 8, - 4, s_offset);
-# 89 "gmhjit.dasc"
+# 106 "gmhjit.dasc"
 #endif
             step++;
             opcode++;
@@ -131,16 +153,16 @@ int gmhjit(dasm_State *state, Instruction *opcode, int size) {
         case DUP: {
             // duplicate the top item on the stack
             //|  mov TMP, [PTR+sp_offsetb]
-            dasm_put(Dst, 25, sp_offsetb);
-# 97 "gmhjit.dasc"
+            dasm_put(Dst, 44, sp_offsetb);
+# 114 "gmhjit.dasc"
             s_offset++;
             //|  mov [PTR+sp_offsetb], TMP
-            dasm_put(Dst, 29, sp_offsetb);
-# 99 "gmhjit.dasc"
+            dasm_put(Dst, 48, sp_offsetb);
+# 116 "gmhjit.dasc"
 #ifndef NDEBUG
             //|  setStackp s_offset
             dasm_put(Dst, 8, - 4, s_offset);
-# 101 "gmhjit.dasc"
+# 118 "gmhjit.dasc"
 #endif
             break;
         }
@@ -148,16 +170,16 @@ int gmhjit(dasm_State *state, Instruction *opcode, int size) {
             // Copy the nth item on the stack (given by the argument)
             // onto the top of the stack
             //|  mov TMP, [PTR+cxtos_1+(*(opcode + 1))*cellsize]
-            dasm_put(Dst, 25, cxtos_1+(*(opcode + 1))*cellsize);
-# 108 "gmhjit.dasc"
+            dasm_put(Dst, 44, cxtos_1+(*(opcode + 1))*cellsize);
+# 125 "gmhjit.dasc"
             s_offset++;
             //|  mov [PTR+sp_offsetb], TMP
-            dasm_put(Dst, 29, sp_offsetb);
-# 110 "gmhjit.dasc"
+            dasm_put(Dst, 48, sp_offsetb);
+# 127 "gmhjit.dasc"
 #ifndef NDEBUG
             //|  setStackp s_offset
             dasm_put(Dst, 8, - 4, s_offset);
-# 112 "gmhjit.dasc"
+# 129 "gmhjit.dasc"
 #endif
             break;
         }
@@ -168,8 +190,8 @@ int gmhjit(dasm_State *state, Instruction *opcode, int size) {
             //|  mov TMP2, [PTR+sp_offsetb-cellsize]
             //|  mov [PTR+sp_offsetb-cellsize],  TMP
             //|  mov [PTR+sp_offsetb],  TMP2
-            dasm_put(Dst, 33, sp_offsetb, sp_offsetb-cellsize, sp_offsetb-cellsize, sp_offsetb);
-# 122 "gmhjit.dasc"
+            dasm_put(Dst, 52, sp_offsetb, sp_offsetb-cellsize, sp_offsetb-cellsize, sp_offsetb);
+# 139 "gmhjit.dasc"
             break;
         }
 
@@ -179,7 +201,7 @@ int gmhjit(dasm_State *state, Instruction *opcode, int size) {
 #ifndef NDEBUG
             //|  setStackp s_offset
             dasm_put(Dst, 8, - 4, s_offset);
-# 130 "gmhjit.dasc"
+# 147 "gmhjit.dasc"
 #endif
             break;
         }
@@ -187,16 +209,16 @@ int gmhjit(dasm_State *state, Instruction *opcode, int size) {
         case SLIDE: {
             // Slide n items off the stack, keeping the top item
             //|  mov TMP,  [PTR+sp_offsetb]
-            dasm_put(Dst, 25, sp_offsetb);
-# 137 "gmhjit.dasc"
+            dasm_put(Dst, 44, sp_offsetb);
+# 154 "gmhjit.dasc"
             s_offset = s_offset - *(opcode + 1) + 1;
             //|  mov [PTR+sp_offsetb], TMP
-            dasm_put(Dst, 29, sp_offsetb);
-# 139 "gmhjit.dasc"
+            dasm_put(Dst, 48, sp_offsetb);
+# 156 "gmhjit.dasc"
 #ifndef NDEBUG
             //|  setStackp s_offset
             dasm_put(Dst, 8, - 4, s_offset);
-# 141 "gmhjit.dasc"
+# 158 "gmhjit.dasc"
 #endif
             step++;
             opcode++;
@@ -208,17 +230,17 @@ int gmhjit(dasm_State *state, Instruction *opcode, int size) {
             // Add pop the first and second element from stack,
             // add them and push the result back
             //|  mov TMP,  [PTR+sp_offsetb]
-            dasm_put(Dst, 25, sp_offsetb);
-# 152 "gmhjit.dasc"
+            dasm_put(Dst, 44, sp_offsetb);
+# 169 "gmhjit.dasc"
             s_offset--;
             //|  add TMP,  [PTR+sp_offsetb]
             //|  mov [PTR+sp_offsetb], TMP
-            dasm_put(Dst, 46, sp_offsetb, sp_offsetb);
-# 155 "gmhjit.dasc"
+            dasm_put(Dst, 65, sp_offsetb, sp_offsetb);
+# 172 "gmhjit.dasc"
 #ifndef NDEBUG
             //|  setStackp s_offset
             dasm_put(Dst, 8, - 4, s_offset);
-# 157 "gmhjit.dasc"
+# 174 "gmhjit.dasc"
 #endif
             break;
         }
@@ -227,17 +249,17 @@ int gmhjit(dasm_State *state, Instruction *opcode, int size) {
             // Subtraction, pop the first and second element from stack, (second - first)
             // sub them and push the result back
             //|  mov TMP,  [PTR+sp_offsetb]
-            dasm_put(Dst, 25, sp_offsetb);
-# 165 "gmhjit.dasc"
+            dasm_put(Dst, 44, sp_offsetb);
+# 182 "gmhjit.dasc"
             s_offset--;
             //|  sub TMP,  [PTR+sp_offsetb]
             //|  mov [PTR+sp_offsetb], TMP
-            dasm_put(Dst, 53, sp_offsetb, sp_offsetb);
-# 168 "gmhjit.dasc"
+            dasm_put(Dst, 72, sp_offsetb, sp_offsetb);
+# 185 "gmhjit.dasc"
 #ifndef NDEBUG
             //|  setStackp s_offset
             dasm_put(Dst, 8, - 4, s_offset);
-# 170 "gmhjit.dasc"
+# 187 "gmhjit.dasc"
 #endif
             break;
         }
@@ -270,18 +292,18 @@ int gmhjit(dasm_State *state, Instruction *opcode, int size) {
             // Store
             //|  mov TMP,  [PTR+sp_offsetb]   // value
             //|  mov TMP2, [PTR+sp_offsetb-cellsize]  // address
-            dasm_put(Dst, 60, sp_offsetb, sp_offsetb-cellsize);
-# 202 "gmhjit.dasc"
+            dasm_put(Dst, 79, sp_offsetb, sp_offsetb-cellsize);
+# 219 "gmhjit.dasc"
             s_offset -= 2;
 
             //|  lea TMP3, [PTR+TMP2*CellSize+cxtos_2]
             //|  mov [TMP3], TMP
-            dasm_put(Dst, 67, cxtos_2);
-# 206 "gmhjit.dasc"
+            dasm_put(Dst, 86, cxtos_2);
+# 223 "gmhjit.dasc"
 #ifndef NDEBUG
             //|  setStackp s_offset
             dasm_put(Dst, 8, - 4, s_offset);
-# 208 "gmhjit.dasc"
+# 225 "gmhjit.dasc"
 #endif
             break;
         }
@@ -292,67 +314,122 @@ int gmhjit(dasm_State *state, Instruction *opcode, int size) {
             //|  lea TMP3, [PTR+TMP*CellSize+cxtos_2]
             //|  mov TMP,  [TMP3]
             //|  mov [PTR+sp_offsetb], TMP
-            dasm_put(Dst, 78, sp_offsetb, cxtos_2, sp_offsetb);
-# 218 "gmhjit.dasc"
+            dasm_put(Dst, 97, sp_offsetb, cxtos_2, sp_offsetb);
+# 235 "gmhjit.dasc"
             break;
         }
 
         // Flow control
         case MARK: {
-            printf("print opcode : %d  MARK:  %x\n", step, *(opcode));
+            // Mark a location in the program
+            unsigned int label = ReservedLabel + *(opcode + 1);
+            if (maxpc < label) {
+                maxpc = label;
+                dasm_growpc(&state, maxpc);
+            }
+            //|=>label:
+            dasm_put(Dst, 114, label);
+# 247 "gmhjit.dasc"
+            opcode++;
+            step++;
             break;
         }
         // Not sure what the difference is between CALL and JUMP.
         // I think this CALL function should actually execute a function...
         case CALL: {
-            printf("print opcode : %d  CALL:  %x\n", step, *(opcode));
+            // Call a subroutine
+            unsigned int label = ReservedLabel + *(opcode + 1);
+            //|  jmp =>label
+            dasm_put(Dst, 116, label);
+# 257 "gmhjit.dasc"
+            opcode++;
+            step++;
             break;
         }
 
         case JUMP: {
-            printf("print opcode : %d  JUMP:  %x\n", step, *(opcode));
+            // Jump unconditionally to a label
+            unsigned int label = ReservedLabel + *(opcode + 1);
+            //|  jmp =>label
+            dasm_put(Dst, 116, label);
+# 266 "gmhjit.dasc"
+            opcode++;
+            step++;
             break;
         }
 
         case JUMPZERO: {
-            printf("print opcode : %d  JUMPZERO:  %x\n", step, *(opcode));
+            // Jump to a label if the top of the stack is zero
+            unsigned int label = ReservedLabel + *(opcode + 1);
+            //|  cmp dword [PTR+sp_offsetb], 0
+            //|  je  =>label
+            dasm_put(Dst, 120, sp_offsetb, label);
+# 276 "gmhjit.dasc"
+            opcode++;
+            step++;
             break;
         }
 
         case JUMPNEG: {
-            printf("print opcode : %d  JUMPNEG:  %x\n", step, *(opcode));
+            // Jump to a label if the top of the stack is negative
+            unsigned int label = ReservedLabel + *(opcode + 1);
+            //|  cmp dword [PTR+sp_offsetb], 0
+            //|  jl  =>label
+            dasm_put(Dst, 128, sp_offsetb, label);
+# 286 "gmhjit.dasc"
+            opcode++;
+            step++;
             break;
         }
 
         case ENDSUB: {
-            printf("print opcode : %d  ENDSUB:  %x\n", step, *(opcode));
+            // End a subroutine and transfer control back to the caller
+            /// TODO
+            // didn't know what's a fuction's beginning
             break;
         }
 
         case ENDPROG: {
-            printf("print opcode : %d  ENDPROG:  %x\n", step, *(opcode));
+            // End the program
+            //|  jmp =>EndProLabel
+            dasm_put(Dst, 116, EndProLabel);
+# 301 "gmhjit.dasc"
             break;
             //return SUC_RETURN; // this is officially the end of the interpreter session
         }
 
         // I/O operations
         case WRITEC: {
-            printf("print opcode : %d  WRITEC:  %x\n", step, *(opcode));
+            // Output the character at the top of the stack
+            //|  movzx edi, byte [PTR+sp_offsetb]
+            //|  callp putchar
+            dasm_put(Dst, 32, sp_offsetb, (unsigned int)((uintptr_t)putchar), (unsigned int)(((uintptr_t)putchar)>>32));
+# 310 "gmhjit.dasc"
             break;
         }
 
         case WRITEN: {
-            printf("print opcode : %d  WRITEN:  %x\n", step, *(opcode));
+            // Output the number at the top of the stack
+            /// TODO
+
             break;
         }
 
         case READC: {
-            printf("print opcode : %d  READC:  %x\n", step, *(opcode));
+            // Read a character and place it in the location
+            // given by the top of the stack
+            //|  mov TMP,  [PTR+sp_offsetb]   // address
+            //|  lea TMP3, [PTR+TMP*CellSize+cxtos_2]
+            //|  callp getchar
+            //|  mov byte [TMP3], al
+            dasm_put(Dst, 136, sp_offsetb, cxtos_2, (unsigned int)((uintptr_t)getchar), (unsigned int)(((uintptr_t)getchar)>>32));
+# 327 "gmhjit.dasc"
             break;
         }
 
         case READN: {
-            printf("print opcode : %d  READN:  %x\n", step, *(opcode));
+            // Read a number and place it in the location
+            // given by the top of the stack
             break;
         }
         default: {
@@ -363,12 +440,14 @@ int gmhjit(dasm_State *state, Instruction *opcode, int size) {
     }
 
     //return SUC_RETURN;
-    //|  mov  rax,  [rsp - 4]
+    //|  mov  rax,  [PTR]
+    //|=>EndProLabel:
     //|  pop  rbp
     //|  pop  PTR
     //|  ret
-    dasm_put(Dst, 95, - 4);
-# 291 "gmhjit.dasc"
+    dasm_put(Dst, 157, EndProLabel);
+# 348 "gmhjit.dasc"
+    printf("print maxpc : %d \n", maxpc);
     return SUC_RETURN;
 }
 

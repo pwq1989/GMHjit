@@ -51,6 +51,9 @@ typedef struct {
 #define cellsize sizeof(int)
 #define sp_offsetb cxtos_1+s_offset*cellsize
 
+#define ReservedLabel 3
+// 2 is end of program
+#define EndProLabel 2
 
 int gmhjit(dasm_State *state, Instruction *opcode, int size) {
 
@@ -59,7 +62,13 @@ int gmhjit(dasm_State *state, Instruction *opcode, int size) {
     int cxtos_1 = offsetof(context_t, stack);
     int cxtos_2 = offsetof(context_t, heap);
 
+    // init pclabel
+    dasm_growpc(&state, 2);
+
     unsigned int maxpc = 0;
+
+    int pcstack[MAX_NESTING];
+    int *top = pcstack, *limit = pcstack + MAX_NESTING;
 
     // stack top ptr offset
     int s_offset = 0;
@@ -76,7 +85,7 @@ int gmhjit(dasm_State *state, Instruction *opcode, int size) {
 #endif
     |  mov   PTR,  rdi
 
-    for(step = 0; step < size; step++, opcode++) {
+    for(step = 0; step < 2; step++, opcode++) {
         switch(*opcode) {
         // opcode t_C
         case PUSH: {
@@ -220,60 +229,99 @@ int gmhjit(dasm_State *state, Instruction *opcode, int size) {
 
         // Flow control
         case MARK: {
-            printf("print opcode : %d  MARK:  %x\n", step, *(opcode));
+            // Mark a location in the program
+            unsigned int label = ReservedLabel + *(opcode + 1);
+            if (maxpc < label) {
+                maxpc = label;
+                dasm_growpc(&state, maxpc);
+            }
+            |=>label:
+            opcode++;
+            step++;
             break;
         }
         // Not sure what the difference is between CALL and JUMP.
         // I think this CALL function should actually execute a function...
         case CALL: {
-            printf("print opcode : %d  CALL:  %x\n", step, *(opcode));
+            // Call a subroutine
+            unsigned int label = ReservedLabel + *(opcode + 1);
+            |  jmp =>label
+            opcode++;
+            step++;
             break;
         }
 
         case JUMP: {
-            printf("print opcode : %d  JUMP:  %x\n", step, *(opcode));
+            // Jump unconditionally to a label
+            unsigned int label = ReservedLabel + *(opcode + 1);
+            |  jmp =>label
+            opcode++;
+            step++;
             break;
         }
 
         case JUMPZERO: {
-            printf("print opcode : %d  JUMPZERO:  %x\n", step, *(opcode));
+            // Jump to a label if the top of the stack is zero
+            unsigned int label = ReservedLabel + *(opcode + 1);
+            |  cmp dword [PTR+sp_offsetb], 0
+            |  je  =>label
+            opcode++;
+            step++;
             break;
         }
 
         case JUMPNEG: {
-            printf("print opcode : %d  JUMPNEG:  %x\n", step, *(opcode));
+            // Jump to a label if the top of the stack is negative
+            unsigned int label = ReservedLabel + *(opcode + 1);
+            |  cmp dword [PTR+sp_offsetb], 0
+            |  jl  =>label
+            opcode++;
+            step++;
             break;
         }
 
         case ENDSUB: {
-            printf("print opcode : %d  ENDSUB:  %x\n", step, *(opcode));
+            // End a subroutine and transfer control back to the caller
+            /// TODO
+            // didn't know what's a fuction's beginning
             break;
         }
 
         case ENDPROG: {
-            printf("print opcode : %d  ENDPROG:  %x\n", step, *(opcode));
+            // End the program
+            |  jmp =>EndProLabel
             break;
             //return SUC_RETURN; // this is officially the end of the interpreter session
         }
 
         // I/O operations
         case WRITEC: {
-            printf("print opcode : %d  WRITEC:  %x\n", step, *(opcode));
+            // Output the character at the top of the stack
+            |  movzx edi, byte [PTR+sp_offsetb]
+            |  callp putchar
             break;
         }
 
         case WRITEN: {
-            printf("print opcode : %d  WRITEN:  %x\n", step, *(opcode));
+            // Output the number at the top of the stack
+            /// TODO
+
             break;
         }
 
         case READC: {
-            printf("print opcode : %d  READC:  %x\n", step, *(opcode));
+            // Read a character and place it in the location
+            // given by the top of the stack
+            |  mov TMP,  [PTR+sp_offsetb]   // address
+            |  lea TMP3, [PTR+TMP*CellSize+cxtos_2]
+            |  callp getchar
+            |  mov byte [TMP3], al
             break;
         }
 
         case READN: {
-            printf("print opcode : %d  READN:  %x\n", step, *(opcode));
+            // Read a number and place it in the location
+            // given by the top of the stack
             break;
         }
         default: {
@@ -284,10 +332,12 @@ int gmhjit(dasm_State *state, Instruction *opcode, int size) {
     }
 
     //return SUC_RETURN;
-    |  mov  rax,  [rsp - 4]
+    //|  mov  rax,  [PTR]
+    |=>EndProLabel:
     |  pop  rbp
     |  pop  PTR
     |  ret
+    printf("print maxpc : %d \n", maxpc);
     return SUC_RETURN;
 }
 
