@@ -85,7 +85,7 @@ int gmhjit(dasm_State *state, Instruction *opcode, int size) {
 #endif
     |  mov   PTR,  rdi
 
-    for(step = 0; step < 2; step++, opcode++) {
+    for(step = 0; step < size; step++, opcode++) {
         switch(*opcode) {
         // opcode t_C
         case PUSH: {
