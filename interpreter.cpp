@@ -281,7 +281,11 @@ int Interpreter::run() {
 
     // for debug
     printf("ret = %x\n", (unsigned int)ret);
-    printf("cxt = %p\n", (void*)cxt);
+    for (int i = 0; i<10; i++) {
+        printf("cxt offset %x = %d\n",i*4,*((int*)cxt+i));
+    }
+
+    //printf("cxt = %p\n", (void*)cxt);
     free_jitcode((void*)fptr);
 
     return ret;

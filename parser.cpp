@@ -175,10 +175,10 @@ long Parser::tokensToNumber(const TokenList &tokens, int &index) {
     }
 
     binNum.erase(binNum.begin()); // Pop the sign bit
-
-    for(int k = binNum.size() - 1; k >= 0; k--) {
+    for(int k = 0; k <= binNum.size() - 1; k++) {
+    //for(int k = binNum.size() - 1; k >= 0; k--) {
         //cout << "Sum = " << sum << endl;
-        sum += ((binNum[k] == t_N) ? pow(2, k) : 0);
+        sum += ((binNum[k] == t_N) ? pow(2, binNum.size() - 1 - k) : 0);
     }
 #ifdef DEBUG
     cout << "Sum = " << sum << endl;

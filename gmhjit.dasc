@@ -49,7 +49,7 @@ typedef struct {
 #define MAX_NESTING 4092
 
 #define cellsize sizeof(int)
-#define sp_offsetb cxtos_1+s_offset*cellsize
+#define sp_offsetb cxtos_1+(s_offset-1)*cellsize
 
 #define ReservedLabel 3
 // 2 is end of program
@@ -89,10 +89,10 @@ int gmhjit(dasm_State *state, Instruction *opcode, int size) {
         switch(*opcode) {
         // opcode t_C
         case PUSH: {
-            // push next instruction to stack
-            |  mov  dword [PTR+sp_offsetb], *(opcode + 1)
             // stack top pointer++
             s_offset++;
+            // push next instruction to stack
+            |  mov  dword [PTR+sp_offsetb], *(opcode + 1)
 #ifndef NDEBUG
             |  setStackp s_offset
 #endif
