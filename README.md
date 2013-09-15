@@ -11,3 +11,5 @@ wiki: http://luajit.org/dynasm.html
 Thanks `timvandermeij`'s work for the parser of whitespace language
 
 I'm struggling for optimizating it...
+
+need more test, GMH file must be UTF-8 encoded.
