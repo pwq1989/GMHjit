@@ -273,9 +273,10 @@ int Interpreter::run() {
     //...
 
     // run jit code
-    // mcode can be cached for next call
 
     dasm_gmh_func fptr = (dasm_gmh_func)jitcode(&state);
+
+    /// TODO mcode can be cached for next call
     // Call the JIT-ted function.
     ret = fptr(cxt);
 

@@ -77,7 +77,7 @@ int main() {
     InstrList bytecode = parser.tokensToIntructions(tokens);
 
 
-
+    /// TODO get cached code by previous call
     Interpreter jit(bytecode);
     int result = jit.run();
     if(result) {

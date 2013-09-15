@@ -183,22 +183,45 @@ int gmhjit(dasm_State *state, Instruction *opcode, int size) {
         case MUL: {
             // Multiplication. pop the first and second element from stack, (second*first)
             // mul them and push the result back
-            /// TODO
-
+            |  mov TMP,  [PTR+sp_offsetb]
+            s_offset--;
+            |  imul TMP,  [PTR+sp_offsetb]
+            |  mov [PTR+sp_offsetb], eax    // ignore over 32bits data
+#ifndef NDEBUG
+            |  setStackp s_offset
+#endif
             break;
         }
 
         case DIV: {
             // Division. pop the first and second element from stack, (second/first)
             // div them and push the result back
-            /// TODO
+            /// TODO   tranlate to mul operation
+            |  xor edx,  edx
+            |  mov TMP2,  [PTR+sp_offsetb]
+            s_offset--;
+            |  mov eax,   [PTR+sp_offsetb]
+            |  idiv TMP2
+            |  mov [PTR+sp_offsetb], eax       //Quotient
+#ifndef NDEBUG
+            |  setStackp s_offset
+#endif
+
             break;
         }
 
         case MOD: {
             // Modulo. pop the first and second element from stack, (second mod first)
             // mod them and push the result back
-            /// TODO
+            |  xor edx,  edx
+            |  mov TMP2,  [PTR+sp_offsetb]
+            s_offset--;
+            |  mov eax,   [PTR+sp_offsetb]
+            |  idiv TMP2
+            |  mov [PTR+sp_offsetb], edx   //remainder
+#ifndef NDEBUG
+            |  setStackp s_offset
+#endif
 
             break;
         }
