@@ -55,6 +55,16 @@ typedef struct {
 // 2 is end of program
 #define EndProLabel 2
 
+void putNumber(int out) {
+    printf("%d", out);
+}
+
+void getNumber() {
+    int out;
+    scanf("%d", &out);
+    return out;
+}
+
 int gmhjit(dasm_State *state, Instruction *opcode, int size) {
 
     int step;
@@ -327,8 +337,8 @@ int gmhjit(dasm_State *state, Instruction *opcode, int size) {
 
         case WRITEN: {
             // Output the number at the top of the stack
-            /// TODO
-
+            |  mov edi, dword [PTR+sp_offsetb]
+            |  callp putNumber
             break;
         }
 
@@ -345,6 +355,10 @@ int gmhjit(dasm_State *state, Instruction *opcode, int size) {
         case READN: {
             // Read a number and place it in the location
             // given by the top of the stack
+            |  mov TMP,  [PTR+sp_offsetb]   // address
+            |  lea TMP3, [PTR+TMP*CellSize+cxtos_2]
+            |  callp getNumber
+            |  mov dword [TMP3], eax
             break;
         }
         default: {
@@ -354,7 +368,6 @@ int gmhjit(dasm_State *state, Instruction *opcode, int size) {
         }
     }
 
-    //return SUC_RETURN;
     //|  mov  rax,  [PTR]
     |=>EndProLabel:
     |  pop  rbp
