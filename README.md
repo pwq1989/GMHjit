@@ -12,4 +12,6 @@ Thanks `timvandermeij`'s work for the parser of whitespace language
 
 I'm struggling for optimizating it...
 
+just support linux/gcc4.6+/x64/little-endian....
+
 need more test, GMH file must be UTF-8 encoded.
